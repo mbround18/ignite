@@ -1,0 +1,9 @@
+{
+  "working_dir": "/tmp",
+  "start_command": "echo 'Example server starting...'",
+  "stop_command": "echo 'Example server stopping...'",
+  "admin_role_ids": [],
+  "server_ids": [],
+  "host": "127.0.0.1",
+  "port": 27015
+}

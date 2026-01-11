@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_version: ${{ env.RELEASE_VERSION }}
+    steps:
+      - name: Get version from tag
+        id: tag_name
+        run: |
+          echo "current_version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # de0fac2, https://github.com/actions/checkout/releases/latest
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd303e70e # 0cb9c9b, https://github.com/actions/create-release/releases/latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ steps.tag_name.outputs.current_version }}
+          draft: false
+          prerelease: false
+
+      - name: Set release version
+        run: echo "RELEASE_VERSION=${{ steps.tag_name.outputs.current_version }}" >> $GITHUB_ENV
+
+  build-and-release:
+    name: Build and Release
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: ignite
+            asset_name: ignite-linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: ignite
+            asset_name: ignite-linux-aarch64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: ignite
+            asset_name: ignite-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: ignite
+            asset_name: ignite-macos-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: ignite.exe
+            asset_name: ignite-windows-x86_64.exe
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # de0fac2, https://github.com/actions/checkout/releases/latest
+
+      - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # e97e2d8, https://github.com/dtolnay/rust-toolchain/releases/latest
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # 779680d, https://github.com/Swatinem/rust-cache/releases/latest
+
+      - name: Install cross (for aarch64-linux)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: cargo install cross
+
+      - name: Build (native)
+        if: matrix.target != 'aarch64-unknown-linux-gnu'
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build (cross)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Strip binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: strip "target/${{ matrix.target }}/release/${{ matrix.artifact_name }}" || true
+
+      - name: Create release archive (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar -czf ../../../${{ matrix.asset_name }}.tar.gz ${{ matrix.artifact_name }}
+
+      - name: Create release archive (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          $file = "target/${{ matrix.target }}/release/${{ matrix.artifact_name }}"
+          Compress-Archive -Path $file -DestinationPath "${{ matrix.asset_name }}.zip"
+
+      - name: Upload Linux/macOS asset
+        if: matrix.os != 'windows-latest'
+        uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5 # e8f9f06, https://github.com/actions/upload-release-asset/releases/latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./${{ matrix.asset_name }}.tar.gz
+          asset_name: ${{ matrix.asset_name }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Windows asset
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5 # e8f9f06, https://github.com/actions/upload-release-asset/releases/latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./${{ matrix.asset_name }}.zip
+          asset_name: ${{ matrix.asset_name }}.zip
+          asset_content_type: application/zip
