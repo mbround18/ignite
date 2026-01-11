@@ -134,15 +134,44 @@ async fn status(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer().await?;
 
     let config = &ctx.data().config;
+    let join_url = config.get_join_url();
 
     // Query server status
     match steam::query_server_status(&config.host, config.port).await {
         Ok(status) => {
-            ctx.say(status.format()).await?;
+            if status.online {
+                // Create embed for online server
+                let embed = serenity::CreateEmbed::default()
+                    .title("🟢 Server Online")
+                    .field("Name", &status.name, false)
+                    .field("Game", &status.game, true)
+                    .field("Map", &status.map, true)
+                    .field(
+                        "Players",
+                        format!("{}/{}", status.players, status.max_players),
+                        true,
+                    )
+                    .field("Join Server", format!("<{}>", join_url), false)
+                    .color(0x00ff00); // Green color
+
+                ctx.send(poise::CreateReply::default().embed(embed)).await?;
+            } else {
+                // Simple embed for offline server
+                let embed = serenity::CreateEmbed::default()
+                    .title("🔴 Server Offline")
+                    .description("The server is currently not responding to queries.")
+                    .color(0xff0000); // Red color
+
+                ctx.send(poise::CreateReply::default().embed(embed)).await?;
+            }
         }
         Err(e) => {
-            ctx.say(format!("❌ **Failed to query server**\n\n{}", e))
-                .await?;
+            let embed = serenity::CreateEmbed::default()
+                .title("❌ Failed to Query Server")
+                .description(format!("{}", e))
+                .color(0xff0000); // Red color
+
+            ctx.send(poise::CreateReply::default().embed(embed)).await?;
         }
     }
 
@@ -156,7 +185,7 @@ pub async fn run(token: String, config: Config) -> Result<()> {
             commands: vec![start(), stop(), status()],
             ..Default::default()
         })
-        .setup(|ctx, _ready, framework| {
+        .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 println!("✅ Bot logged in as {}", _ready.user.name);
 
@@ -164,6 +193,34 @@ pub async fn run(token: String, config: Config) -> Result<()> {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
 
                 println!("✅ Commands registered globally");
+
+                // Print bot invite URL to console
+                // Permissions: Send Messages (2048) + Use Slash Commands (2147483648) = 2147485696
+                let bot_invite_url = format!(
+                    "https://discord.com/api/oauth2/authorize?client_id={}&permissions=2147485696&scope=bot%20applications.commands",
+                    _ready.user.id
+                );
+                println!("🔗 Bot invite URL: {}", bot_invite_url);
+
+                // Broadcast join URL if configured
+                if let Some(channel_id) = config.broadcast_channel_id {
+                    let channel = serenity::ChannelId::new(channel_id);
+                    let join_url = config.get_join_url();
+
+                    let message = format!(
+                        "🎮 **Server is ready!**\n\n\
+                        **Join the game server:**\n\
+                        `{}`\n\
+                        Or click: <{}>",
+                        join_url, join_url
+                    );
+
+                    if let Err(e) = channel.say(&ctx.http, message).await {
+                        eprintln!("⚠️  Failed to broadcast join URL: {}", e);
+                    } else {
+                        println!("📢 Broadcasted join URL to channel {}", channel_id);
+                    }
+                }
 
                 Ok(Data {
                     config: Arc::new(config),

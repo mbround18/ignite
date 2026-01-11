@@ -16,6 +16,10 @@ pub struct Config {
     pub host: String,
     #[serde(default = "default_port")]
     pub port: u16,
+    #[serde(default)]
+    pub broadcast_channel_id: Option<u64>,
+    #[serde(default)]
+    pub join_address: Option<String>,
 }
 
 fn default_host() -> String {
@@ -112,5 +116,24 @@ impl Config {
 
         println!("✓ Config saved to {}", path.display());
         Ok(())
+    }
+
+    /// Get the join URL for the server
+    /// Uses join_address if set, otherwise builds from host:port
+    /// Ensures the URL has the steam://connect/ prefix
+    pub fn get_join_url(&self) -> String {
+        let address = self.join_address.as_deref().unwrap_or("");
+
+        if !address.is_empty() {
+            // Use custom join_address
+            if address.starts_with("steam://connect/") {
+                address.to_string()
+            } else {
+                format!("steam://connect/{}", address)
+            }
+        } else {
+            // Build from host:port
+            format!("steam://connect/{}:{}", self.host, self.port)
+        }
     }
 }

@@ -50,7 +50,23 @@ That's it! The bot will register commands with Discord and be ready to use.
 
 ## Configuration
 
-Run `cargo run -- init` to create `~/.ignition/ignition.json` interactively:
+Run `cargo run -- init` to create `~/.ignition/ignition.json` interactively.
+
+### Configuration Options
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `working_dir` | `string` | ✅ | - | Working directory where server files are located |
+| `start_command` | `string` | ✅ | - | Shell command to start the server (e.g., `./start.sh`) |
+| `stop_command` | `string` | ✅ | - | Shell command to stop the server (e.g., `./stop.sh`) |
+| `admin_role_ids` | `array<u64>` | ❌ | `[]` | Discord role IDs that can use start/stop commands. Empty = no restrictions |
+| `server_ids` | `array<u64>` | ❌ | `[]` | Discord server IDs where bot can be used. Empty = works in all servers |
+| `host` | `string` | ❌ | `127.0.0.1` | Steam server IP address for status queries |
+| `port` | `u16` | ❌ | `27015` | Steam server query port (UDP) |
+| `broadcast_channel_id` | `u64 \| null` | ❌ | `null` | Discord channel ID to broadcast join URL when bot starts |
+| `join_address` | `string \| null` | ❌ | `null` | Custom join address. Can include `steam://connect/` prefix or just `host:port`. Overrides `host:port` if set |
+
+### Example Configuration
 
 ```json
 {
@@ -59,8 +75,10 @@ Run `cargo run -- init` to create `~/.ignition/ignition.json` interactively:
   "stop_command": "./stop.sh",
   "admin_role_ids": [123456789],
   "server_ids": [987654321],
-  "host": "127.0.0.1",
-  "port": 27015
+  "host": "51.222.244.152",
+  "port": 2457,
+  "broadcast_channel_id": 1234567890123456789,
+  "join_address": "my-server.com:27015"
 }
 ```
 

@@ -99,6 +99,20 @@ async fn init_command() -> Result<()> {
         port_str.parse::<u16>().unwrap_or(27015)
     };
 
+    let broadcast_input = prompt("Broadcast channel ID (optional - press Enter to skip): ")?;
+    let broadcast_channel_id = if broadcast_input.is_empty() {
+        None
+    } else {
+        broadcast_input.parse::<u64>().ok()
+    };
+
+    let join_input = prompt("Custom join address (optional - can include 'steam://connect/' prefix or not, press Enter to use host:port): ")?;
+    let join_address = if join_input.is_empty() {
+        None
+    } else {
+        Some(join_input)
+    };
+
     // Create config
     let config = Config {
         working_dir,
@@ -108,6 +122,8 @@ async fn init_command() -> Result<()> {
         server_ids,
         host,
         port,
+        broadcast_channel_id,
+        join_address,
     };
 
     // Save config

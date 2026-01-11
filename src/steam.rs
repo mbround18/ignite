@@ -58,21 +58,4 @@ pub async fn query_server_status(host: &str, port: u16) -> Result<ServerStatus> 
     }
 }
 
-impl ServerStatus {
-    /// Format status as a friendly string
-    pub fn format(&self) -> String {
-        if !self.online {
-            return "🔴 **Server Offline**\n\nThe server is currently not responding to queries."
-                .to_string();
-        }
-
-        format!(
-            "🟢 **Server Online**\n\n\
-            **Name:** {}\n\
-            **Game:** {}\n\
-            **Map:** {}\n\
-            **Players:** {}/{}",
-            self.name, self.game, self.map, self.players, self.max_players
-        )
-    }
-}
+impl ServerStatus {}
