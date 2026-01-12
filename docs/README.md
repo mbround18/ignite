@@ -18,7 +18,7 @@ A Discord bot for managing Steam game servers with slash commands.
 - A Discord bot token ([create one](https://discord.com/developers/applications))
 - A Steam game server (optional, for testing)
 
-### Install
+### Install/Upgrade
 
 Use the prebuilt binaries from the latest release.
 
@@ -44,32 +44,6 @@ Specific version:
 
 ```powershell
 irm https://raw.githubusercontent.com/mbround18/ignite/main/install.ps1 | iex -ArgumentList "-Version v1.0.0"
-```
-
-### Upgrading
-
-To upgrade to the latest version, just re-run the install script:
-
-Linux/macOS:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/mbround18/ignite/main/install.sh | bash
-```
-
-Windows (PowerShell):
-
-```powershell
-irm https://raw.githubusercontent.com/mbround18/ignite/main/install.ps1 | iex
-```
-
-Install a specific version:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/mbround18/ignite/main/install.sh | bash -s -- --version vX.Y.Z
-```
-
-```powershell
-irm https://raw.githubusercontent.com/mbround18/ignite/main/install.ps1 | iex -ArgumentList "-Version vX.Y.Z"
 ```
 
 ### Setup (30 seconds)
