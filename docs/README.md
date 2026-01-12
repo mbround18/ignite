@@ -18,26 +18,72 @@ A Discord bot for managing Steam game servers with slash commands.
 - A Discord bot token ([create one](https://discord.com/developers/applications))
 - A Steam game server (optional, for testing)
 
-### Installation
+### Install
+
+Use the prebuilt binaries from the latest release.
+
+Linux/macOS:
 
 ```bash
-git clone https://github.com/mbround18/ignite.git
-cd ignite
-cargo build --release
+curl -fsSL https://raw.githubusercontent.com/mbround18/ignite/main/install.sh | bash
+```
+
+Specific version:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mbround18/ignite/main/install.sh | bash -s -- --version v1.0.0
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/mbround18/ignite/main/install.ps1 | iex
+```
+
+Specific version:
+
+```powershell
+irm https://raw.githubusercontent.com/mbround18/ignite/main/install.ps1 | iex -ArgumentList "-Version v1.0.0"
+```
+
+### Upgrading
+
+To upgrade to the latest version, just re-run the install script:
+
+Linux/macOS:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mbround18/ignite/main/install.sh | bash
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/mbround18/ignite/main/install.ps1 | iex
+```
+
+Install a specific version:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mbround18/ignite/main/install.sh | bash -s -- --version vX.Y.Z
+```
+
+```powershell
+irm https://raw.githubusercontent.com/mbround18/ignite/main/install.ps1 | iex -ArgumentList "-Version vX.Y.Z"
 ```
 
 ### Setup (30 seconds)
 
 ```bash
 # Initialize configuration
-cargo run -- init
+ignite init
 
 # Create .env file with your Discord token
 cp .env.example .env
 # Edit .env and add your DISCORD_TOKEN
 
 # Start the bot
-cargo run -- start
+ignite start
 ```
 
 That's it! The bot will register commands with Discord and be ready to use.
@@ -54,17 +100,17 @@ Run `cargo run -- init` to create `~/.ignition/ignition.json` interactively.
 
 ### Configuration Options
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `working_dir` | `string` | ✅ | - | Working directory where server files are located |
-| `start_command` | `string` | ✅ | - | Shell command to start the server (e.g., `./start.sh`) |
-| `stop_command` | `string` | ✅ | - | Shell command to stop the server (e.g., `./stop.sh`) |
-| `admin_role_ids` | `array<u64>` | ❌ | `[]` | Discord role IDs that can use start/stop commands. Empty = no restrictions |
-| `server_ids` | `array<u64>` | ❌ | `[]` | Discord server IDs where bot can be used. Empty = works in all servers |
-| `host` | `string` | ❌ | `127.0.0.1` | Steam server IP address for status queries |
-| `port` | `u16` | ❌ | `27015` | Steam server query port (UDP) |
-| `broadcast_channel_id` | `u64 \| null` | ❌ | `null` | Discord channel ID to broadcast join URL when bot starts |
-| `join_address` | `string \| null` | ❌ | `null` | Custom join address. Can include `steam://connect/` prefix or just `host:port`. Overrides `host:port` if set |
+| Field                  | Type             | Required | Default     | Description                                                                                                  |
+| ---------------------- | ---------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------ |
+| `working_dir`          | `string`         | ✅       | -           | Working directory where server files are located                                                             |
+| `start_command`        | `string`         | ✅       | -           | Shell command to start the server (e.g., `./start.sh`)                                                       |
+| `stop_command`         | `string`         | ✅       | -           | Shell command to stop the server (e.g., `./stop.sh`)                                                         |
+| `admin_role_ids`       | `array<u64>`     | ❌       | `[]`        | Discord role IDs that can use start/stop commands. Empty = no restrictions                                   |
+| `server_ids`           | `array<u64>`     | ❌       | `[]`        | Discord server IDs where bot can be used. Empty = works in all servers                                       |
+| `host`                 | `string`         | ❌       | `127.0.0.1` | Steam server IP address for status queries                                                                   |
+| `port`                 | `u16`            | ❌       | `27015`     | Steam server query port (UDP)                                                                                |
+| `broadcast_channel_id` | `u64 \| null`    | ❌       | `null`      | Discord channel ID to broadcast join URL when bot starts                                                     |
+| `join_address`         | `string \| null` | ❌       | `null`      | Custom join address. Can include `steam://connect/` prefix or just `host:port`. Overrides `host:port` if set |
 
 ### Example Configuration
 
@@ -102,23 +148,7 @@ Run `cargo run -- init` to create `~/.ignition/ignition.json` interactively.
 
 ## Development
 
-```bash
-# Build
-cargo build
-
-# Test
-cargo test
-
-# Format & lint
-cargo fmt
-cargo clippy
-
-# Run
-cargo run -- init
-cargo run -- start
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guide.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development details.
 
 ## Releases
 
