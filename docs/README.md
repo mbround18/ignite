@@ -14,9 +14,8 @@ A Discord bot for managing Steam game servers with slash commands.
 
 ### Prerequisites
 
-- Rust 1.70+ ([install here](https://rustup.rs/))
 - A Discord bot token ([create one](https://discord.com/developers/applications))
-- A Steam game server (optional, for testing)
+- A Steam game server
 
 ### Install/Upgrade
 
