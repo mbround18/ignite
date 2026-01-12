@@ -96,7 +96,7 @@ That's it! The bot will register commands with Discord and be ready to use.
 
 ## Configuration
 
-Run `cargo run -- init` to create `~/.ignition/ignition.json` interactively.
+Run `ignite init` to create `~/.ignition/ignition.json` interactively.
 
 ### Configuration Options
 
