@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # Ignite installer script for Linux/macOS
 # Usage: ./install.sh [--version VERSION]
@@ -67,29 +67,90 @@ echo "   OS: $OS"
 echo "   Architecture: $ARCH"
 echo "   Version: $VERSION"
 
-# Determine download URL
-if [ "$VERSION" = "latest" ]; then
-  DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY_NAME}"
-  echo "   Fetching: latest release"
+# Construct candidate asset names
+if [ "$OS" = "linux" ]; then
+  RAW_ASSET="ignite-${TARGET}"
+  ARCHIVE_ASSET="ignite-linux-${ARCH}.tar.gz"
 else
-  DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${BINARY_NAME}"
-  echo "   Fetching: ${VERSION}"
+  RAW_ASSET="ignite-${TARGET}"
+  ARCHIVE_ASSET="ignite-macos-${ARCH}.tar.gz"
 fi
 
-# Download binary
+# Normalize version tag (add leading v if missing)
+VERSION_TAG="$VERSION"
+if [ "$VERSION_TAG" != "latest" ] && [[ "$VERSION_TAG" != v* ]]; then
+  VERSION_TAG="v$VERSION_TAG"
+fi
+
+# Build candidate URLs (raw binary first, then archive)
+if [ "$VERSION_TAG" = "latest" ]; then
+  URLS=(
+    "https://github.com/${REPO}/releases/latest/download/${RAW_ASSET}"
+    "https://github.com/${REPO}/releases/latest/download/${ARCHIVE_ASSET}"
+  )
+else
+  URLS=(
+    "https://github.com/${REPO}/releases/download/${VERSION_TAG}/${RAW_ASSET}"
+    "https://github.com/${REPO}/releases/download/${VERSION_TAG}/${ARCHIVE_ASSET}"
+  )
+fi
+
+TMP_FILE="$(mktemp)"
+TMP_DIR="$(mktemp -d)"
+DOWNLOADED_URL=""
+
 echo ""
 echo "📥 Downloading from GitHub..."
-if command -v curl &> /dev/null; then
-  curl -fsSL -o ignite "$DOWNLOAD_URL"
-elif command -v wget &> /dev/null; then
-  wget -q -O ignite "$DOWNLOAD_URL"
-else
-  echo "❌ Neither curl nor wget found. Please install one of them."
+
+# Download helper
+_download() {
+  local url="$1" out="$2"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fL --retry 3 -o "$out" "$url" || return 1
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q -O "$out" "$url" || return 1
+  else
+    echo "❌ Neither curl nor wget found. Please install one of them."
+    exit 1
+  fi
+}
+
+# Try candidates
+for u in "${URLS[@]}"; do
+  if _download "$u" "$TMP_FILE"; then
+    DOWNLOADED_URL="$u"
+    break
+  fi
+done
+
+if [ -z "$DOWNLOADED_URL" ]; then
+  echo "❌ Failed to download Ignite."
+  echo "   Tried:"
+  for u in "${URLS[@]}"; do echo "   - $u"; done
   exit 1
 fi
 
+# If archive, extract; else move raw binary
+if [[ "$DOWNLOADED_URL" == *.tar.gz ]]; then
+  tar -xzf "$TMP_FILE" -C "$TMP_DIR"
+  if [ -f "$TMP_DIR/ignite" ]; then
+    mv "$TMP_DIR/ignite" "$INSTALL_DIR/ignite"
+  else
+    BIN_PATH=$(tar -tzf "$TMP_FILE" | grep -E "(^|/)ignite$" | head -n1 || true)
+    if [ -n "$BIN_PATH" ]; then
+      tar -xzf "$TMP_FILE" -C "$TMP_DIR" "$BIN_PATH"
+      mv "$TMP_DIR/$BIN_PATH" "$INSTALL_DIR/ignite"
+    else
+      echo "❌ Could not find 'ignite' binary in the archive."
+      exit 1
+    fi
+  fi
+else
+  mv "$TMP_FILE" "$INSTALL_DIR/ignite"
+fi
+
 # Make executable
-chmod +x ignite
+chmod +x "$INSTALL_DIR/ignite"
 
 # Verify installation
 if [ -f "./ignite" ]; then
